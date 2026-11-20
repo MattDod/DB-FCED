@@ -1,0 +1,167 @@
+
+@startuml
+
+!pragma layout smetana
+
+title Conference Support System - Core + Module E
+
+top to bottom direction
+
+skinparam classAttributeIconSize 0
+skinparam nodesep 45
+skinparam ranksep 65
+skinparam shadowing false
+
+' ==========================================
+' CORE SYSTEM - CLASSES
+' ==========================================
+
+class Conference {
+    id : Integer
+    name : String
+    acronym : String
+    description : String
+}
+
+class ConferenceEdition {
+    year : Integer
+    startDate : Date
+    endDate : Date
+    location : String
+}
+
+class Participant {
+    id : Integer
+    name : String
+    email : String
+    affiliation : String
+}
+
+class Activity {
+    id : Integer
+    title : String
+    description : String
+    startDateTime : DateTime
+    endDateTime : DateTime
+}
+
+class Involvement {
+    role : String
+}
+
+
+' ==========================================
+' MODULE E - CLASSES
+' ==========================================
+
+class Organisation {
+    id : Integer
+    name : String
+    website : String
+    contactInfo : String
+}
+
+class SponsorshipPackage {
+    name : String
+    price : Decimal
+    description : String
+}
+
+class ExhibitionSpace {
+    id : Integer
+    nameOrNumber : String
+    location : String
+    fee : Decimal
+}
+
+
+' ==========================================
+' CORE SYSTEM - ASSOCIATIONS
+' ==========================================
+
+' Conference has multiple editions
+Conference "1" -down- "0..*" ConferenceEdition : has
+
+' Participants attend Conference Editions
+ConferenceEdition "0..*" -- "0..*" Participant : participation
+
+' Conference Editions contain Activities
+ConferenceEdition "1" -- "0..*" Activity : contains
+
+' Participants are involved in Activities
+Participant "0..*" -- "0..*" Activity : involved in
+
+' Association Class
+(Participant, Activity) .. Involvement
+
+
+' ==========================================
+' MODULE E - ASSOCIATIONS
+' ==========================================
+
+' Conference Edition offers Sponsorship Packages
+ConferenceEdition "1" -- "0..*" SponsorshipPackage : offers
+
+' Conference Edition provides Exhibition Spaces
+ConferenceEdition "1" -- "0..*" ExhibitionSpace : provides
+
+' Organisations acquire Sponsorship Packages
+Organisation "0..*" -- "0..*" SponsorshipPackage : acquires
+
+' Organisations reserve Exhibition Spaces
+Organisation "0..1" -- "0..*" ExhibitionSpace : reserves
+
+
+' ==========================================
+' CORE SYSTEM - CONSTRAINTS
+' ==========================================
+
+note right of ConferenceEdition
+  C1 - Unique Edition:
+  The year must be unique
+  within each Conference.
+
+  C2 - Edition Dates:
+  startDate <= endDate
+end note
+
+note right of Activity
+  C3 - Activity Dates:
+  startDateTime < endDateTime
+
+  Activity must take place
+  within its ConferenceEdition.
+end note
+
+note bottom of Involvement
+  C4 - Participation Constraint:
+  A Participant involved in
+  an Activity must also
+  participate in the
+  corresponding ConferenceEdition.
+end note
+
+
+' ==========================================
+' MODULE E - CONSTRAINTS
+' ==========================================
+
+note right of SponsorshipPackage
+  E1 - Unique Package:
+  Package names must be unique
+  within each ConferenceEdition.
+
+  E2 - Sponsorship Limit:
+  An Organisation may acquire
+  at most one SponsorshipPackage
+  per ConferenceEdition.
+end note
+
+note right of ExhibitionSpace
+  E3 - Exclusive Reservation:
+  Each ExhibitionSpace may be
+  reserved by at most one
+  Organisation.
+end note
+
+@enduml
