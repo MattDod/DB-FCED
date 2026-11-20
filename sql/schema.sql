@@ -290,3 +290,85 @@ CREATE TABLE award_recipient (
     FOREIGN KEY (participant_id)
         REFERENCES participant(id)
 );
+
+
+-- ==========================================
+-- 4. ADDITIONAL INTEGRITY CONSTRAINTS
+-- ==========================================
+
+-- ==========================================
+-- 4.1 Validate Activity Dates
+-- ==========================================
+
+CREATE OR REPLACE FUNCTION check_activity_dates()
+RETURNS TRIGGER AS $$
+DECLARE
+    edition_start DATE;
+    edition_end DATE;
+BEGIN
+    -- Obtain and lock the corresponding edition
+    SELECT start_date, end_date
+    INTO edition_start, edition_end
+    FROM conference_edition
+    WHERE conference_id = NEW.conference_id
+      AND year = NEW.edition_year
+    FOR SHARE;
+
+    -- The foreign key handles nonexistent editions
+    IF NOT FOUND THEN
+        RETURN NEW;
+    END IF;
+
+    -- Validate the activity period
+    IF NEW.start_date_time < edition_start::TIMESTAMP
+       OR NEW.end_date_time >=
+          (edition_end + 1)::TIMESTAMP THEN
+
+        RAISE EXCEPTION
+            'Activity dates must be within the Conference Edition period';
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+
+CREATE TRIGGER trg_check_activity_dates
+BEFORE INSERT OR UPDATE ON activity
+FOR EACH ROW
+EXECUTE FUNCTION check_activity_dates();
+
+
+-- ==========================================
+-- 4.2 Validate Conference Edition Date Changes
+-- ==========================================
+
+CREATE OR REPLACE FUNCTION check_edition_dates()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Check existing activities against new dates
+    IF EXISTS (
+        SELECT 1
+        FROM activity
+        WHERE conference_id = NEW.conference_id
+          AND edition_year = NEW.year
+          AND (
+              start_date_time < NEW.start_date::TIMESTAMP
+              OR end_date_time >=
+                 (NEW.end_date + 1)::TIMESTAMP
+          )
+    ) THEN
+        RAISE EXCEPTION
+            'Edition dates cannot exclude existing Activities';
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+
+CREATE TRIGGER trg_check_edition_dates
+BEFORE UPDATE OF start_date, end_date
+ON conference_edition
+FOR EACH ROW
+EXECUTE FUNCTION check_edition_dates();
