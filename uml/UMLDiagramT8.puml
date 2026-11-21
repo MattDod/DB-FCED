@@ -1,0 +1,131 @@
+@startuml
+title UML Diagram - Team 8
+
+' Converted from UMLDiagramT8.drawio (Core System + Modules E and G).
+' Layout is calculated automatically by PlantUML; semantic relations come from source.
+left to right direction
+hide circle
+skinparam shadowing false
+skinparam backgroundColor #FFFFFF
+skinparam classBackgroundColor #F7F8FA
+skinparam classBorderColor #313B4B
+skinparam classFontColor #111827
+skinparam ArrowColor #334155
+skinparam NoteBackgroundColor #FFFDF0
+skinparam NoteBorderColor #64748B
+skinparam NoteFontColor #111827
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+
+class "Conference" as Conference {
+  conference_id: number «unique, not null»
+  name: text
+  acronym: text
+  description: text
+}
+
+class "ConferenceEdition" as ConferenceEdition {
+  startdate: date
+  enddate: date
+  location: text
+}
+
+class "Activity" as Activity {
+  activity_id: number «unique, not null»
+  title: text
+  description: text
+  startdatetime: timestamp
+  enddatetime: timestamp
+}
+
+class "Participant" as Participant {
+  participant_id: number «unique, not null»
+  name: text
+  email: text
+  affiliation: text
+}
+
+class " " as ActivityRole {
+  role: text
+}
+
+class "Organisation" as Organisation {
+  organisation_id: number «unique, not null»
+  name: text
+  website: text
+  contactInfo: text
+}
+
+class "SponsorshipPackage" as SponsorshipPackage {
+  price: number
+  description: text
+}
+
+class "ExhibitionSpace" as ExhibitionSpace {
+  exhibitionSpace_id: number «unique, not null»
+  nameOrNumber: text
+  location: text
+  fee: number
+}
+
+class "Grant" as Grant {
+  grant_id: number «unique, not null»
+  name: text
+  description: text
+  applicationDeadline: date
+  amount: number
+}
+
+class "Award" as Award {
+  award_id: number «unique, not null»
+  name: text
+  description: text
+  monetaryValue: number
+}
+
+class "Application" as Application {
+  applicationDate: date
+  status: text
+}
+
+' Core System
+' The 'year' qualifier is attached to Conference, NOT an attribute of ConferenceEdition.
+Conference [year] -- "0..1" ConferenceEdition : has
+' The Conference-side multiplicity is 1 (each edition belongs to exactly one Conference).
+ConferenceEdition "1" -- "*" Activity : has
+ConferenceEdition "*" -- "*" Participant : participates
+Activity "*" -- "*" Participant : involved
+(Activity, Participant) .. ActivityRole
+
+' Module E: Sponsorship and Exhibition
+' The 'name' qualifier is attached to ConferenceEdition.
+ConferenceEdition [name] -- "0..1" SponsorshipPackage : offers
+' Each SponsorshipPackage belongs to exactly one ConferenceEdition.
+ConferenceEdition "1" -- "*" ExhibitionSpace : provides
+Organisation "0..1" -- "*" ExhibitionSpace : reserves
+' Ternary acquisition association with cardinalities adjacent to participating classes.
+diamond "acquires" as Acquisition
+ConferenceEdition "0..1" -- Acquisition
+Organisation "*" -- Acquisition
+SponsorshipPackage "0..1" -- Acquisition
+
+' Module G: Grants and Awards
+ConferenceEdition "1" -- "*" Grant : offers
+ConferenceEdition "1" -- "*" Award : defines
+Participant "*" -- "*" Grant : applies
+(Participant, Grant) .. Application
+Participant "*" -- "*" Award : receives
+
+note right of Activity
+An Activity must start and end within its ConferenceEdition calendar dates. Activity.startdatetime must not exceed Activity.enddatetime, and edition startdate must not exceed enddate.
+end note
+
+note right of Participant
+A Participant involved in an Activity must also participate in the ConferenceEdition to which that Activity belongs.
+end note
+
+note bottom of Acquisition
+In an acquisition, SponsorshipPackage must belong to the same ConferenceEdition as the one referenced by the ternary association.
+end note
+
+@enduml
