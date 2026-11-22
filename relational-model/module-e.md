@@ -91,7 +91,8 @@ Relationships:
 - sponsorship_package 1:N sponsorship_acquisition
 
 Original UML relationship:
-- organisation N:M sponsorship_package
+- Ternary association: Organisation,
+  ConferenceEdition and SponsorshipPackage.
 
 
 ## 4. Exhibition Space

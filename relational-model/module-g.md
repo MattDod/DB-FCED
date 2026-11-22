@@ -5,7 +5,7 @@
 
 Relation:
 
-grant(
+conference_grant(
     id,
     name,
     description,
@@ -33,7 +33,7 @@ Constraints:
 - conference_id and edition_year are mandatory.
 
 Relationship:
-- conference_edition 1:N grant
+- conference_edition 1:N conference_grant
 
 
 ## 2. Grant Application
@@ -55,7 +55,7 @@ Foreign Keys:
   REFERENCES participant(id)
 
 - grant_id
-  REFERENCES grant(id)
+  REFERENCES conference_grant(id)
 
 Constraints:
 - A Participant may apply for multiple Grants.
@@ -70,7 +70,7 @@ Constraints:
 
 Relationships:
 - participant 1:N grant_application
-- grant 1:N grant_application
+- conference_grant 1:N grant_application
 
 Original UML relationship:
 - participant N:M grant

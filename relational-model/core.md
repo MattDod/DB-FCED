@@ -98,8 +98,8 @@ Foreign Keys:
 - (conference_id, edition_year)
   REFERENCES conference_edition(conference_id, year)
 
-Candidate / Unique Keys:
-- (id, conference_id, edition_year)
+Additional Unique Constraint:
+- UNIQUE (id, conference_id, edition_year)
 
 Constraints:
 - Each Activity belongs to exactly one Conference Edition.
