@@ -1,44 +1,48 @@
+# Conference Support System — Team 8
 
-# DB-FCED — Conference Support System - Team 8
-
-## 1. Team Members
+## Team Members
 
 | Name | Student Number |
 |---|---|
-| [Miguel Neri] | [202006475] |
-| [Luís Cordeiro] | [202205425] |
-| [Afonso Marques] | [202602762] |
+| Miguel Neri | 202006475 |
+| Luís Cordeiro | 202205425 |
+| Afonso Relvas | 202602762 |
 
+## Selected Modules
 
-## 2. Selected Modules
-
-The project implements the mandatory **Core System** and the following two optional modules:
+The project implements the mandatory **Core System** and exactly two optional modules:
 
 - **Module E — Sponsorship and Exhibition**
 - **Module G — Grants and Awards**
 
-The solution consists of a UML conceptual model, its corresponding relational model, a PostgreSQL database schema, and the six SQL queries required by the assignment.
+There are no additional integration requirements between these two modules. Integrations with unselected modules do not apply.
 
-## 3. Database Management System
+## Database Management System
 
-The database was implemented using **PostgreSQL**.
+**PostgreSQL**. The implementation uses primary, foreign, composite and unique keys, `NOT NULL` and `CHECK` constraints, and triggers for date validation across tables.
 
-The implementation uses primary keys, foreign keys, composite keys, unique constraints, NOT NULL constraints, CHECK constraints, and triggers to enforce the relevant integrity requirements.
+## Relevant Modelling Decisions
 
-## Relevant Modelling Decisions and Explanations
+1. **Conference editions.** In the UML, `year` qualifies the Conference–ConferenceEdition association. In SQL, `(conference_id, year)` is the edition's composite primary key, allowing different conferences to have editions in the same year.
 
-1. **Conference editions.** Each edition is identified by `(conference_id, year)`, since edition years are unique within a conference rather than globally. References to conference editions therefore use composite foreign keys.
+2. **Activity dates.** Each activity has timestamps satisfying `start_date_time < end_date_time` (zero-duration activities are excluded). Edition start/end dates are inclusive. Triggers ensure activities fall within their edition's dates, including after updates to those dates.
 
-2. **Activity duration and dates.** Activities must satisfy `start_date_time < end_date_time`, excluding zero-duration activities. PostgreSQL triggers ensure that activity timestamps fall within the corresponding conference edition's dates, including when those dates are updated.
+3. **Activity involvement.** The unnamed UML Participant–Activity association class, with attribute `role`, becomes `activity_involvement`. Composite foreign keys ensure that involved participants also participate in the activity's edition. `UNIQUE (id, conference_id, edition_year)` on `activity` supports this referential constraint; `id` remains its primary key.
 
-3. **Activity involvement.** The UML association class *Involvement* is implemented by `activity_involvement`, preserving the participant's `role`. Composite foreign keys ensure that a participant involved in an activity also participates in that activity's conference edition. An additional `UNIQUE (id, conference_id, edition_year)` constraint on `activity` supports this referential structure without changing its primary key.
+4. **Sponsorship packages.** The UML `name` qualifier expresses uniqueness within an edition. Thus, the relational primary key is `(conference_id, edition_year, name)`.
 
-4. **Sponsorship packages and acquisitions.** A sponsorship package is identified by `(conference_id, edition_year, name)`, reflecting the qualified association in the UML. The ternary UML acquisition association is implemented by `sponsorship_acquisition`, whose primary key allows an organisation to acquire at most one package per conference edition. A composite foreign key ensures that the acquired package belongs to that edition, while allowing multiple organisations to acquire the same package.
+5. **Sponsorship acquisitions.** The UML ternary association is implemented by `sponsorship_acquisition`. The primary key `(organisation_id, conference_id, edition_year)` limits each organisation to one package per edition. A composite foreign key ensures that the acquired package belongs to that edition. Different organisations may acquire the same package.
 
-5. **Exhibition spaces.** `exhibition_space.organisation_id` is nullable, allowing a space to exist before being reserved. Each space can be reserved by at most one organisation, while an organisation may reserve several spaces.
+6. **Exhibition spaces.** The nullable `organisation_id` in `exhibition_space` permits unreserved spaces; each space has at most one reserving organisation. Sponsorship and exhibition are independent, so an organisation may do both in the same edition.
 
-6. **Grant applications.** The UML association class *Application* is implemented by `grant_application`, preserving `application_date` and `status`. Its primary key `(participant_id, grant_id)` prevents duplicate applications for the same grant. Applications with status `accepted` are considered successful, and a grant's `amount` represents the amount awarded to each successful applicant, not its total budget.
+7. **Grant applications.** The UML association class `Application` becomes `grant_application`. Its primary key `(participant_id, grant_id)` prevents duplicate applications. We adopted the example statuses `submitted`, `accepted` and `rejected` as the allowed states; `accepted` indicates a successful application. Each grant's `amount` is awarded per successful applicant.
 
-7. **Grants and awards.** The UML class *Grant* is implemented as `conference_grant` to avoid using the reserved SQL keyword `GRANT`. Awards can have multiple recipients or remain unassigned, and their `monetary_value` is optional. No additional conference edition participation requirement is imposed on grant applicants or award recipients, as Module G does not specify one.
+8. **Awards and grants.** The SQL table is called `conference_grant` to avoid the PostgreSQL keyword `GRANT`. An award may have no recipients or several recipients, and `monetary_value` is optional. The specification does not require grant applicants or award recipients to participate in the award/grant's conference edition, so no such restriction was added.
 
-8. **Module integrations.** The selected Modules E and G have no additional integration requirements between them. The integration requirements of Module G with Modules A and B do not apply because neither module was selected.
+9. **Monetary values.** Package prices, exhibition fees, grant amounts and non-null award monetary values must be non-negative. This is an additional modelling assumption.
+
+## Submitted Files and Testing
+
+The required files are `README.md`, `uml.pdf`, `relational-model.pdf`, `schema.sql` and `queries.sql` (six queries: Core Q1–Q2, E Q1–Q2, G Q1–Q2). The optional `data.sql` supplies example records. `tests.sql` contains six negative integrity tests for local validation and is not a mandatory submission file.
+
+For local verification on an **empty PostgreSQL database**, execute `schema.sql`, then `data.sql`, `queries.sql` and `tests.sql` in that order. The queries use the example edition `(conference_id = 1, year = 2027)`; `tests.sql` rolls back its test transaction. Successful execution must be confirmed in PostgreSQL before submission.
