@@ -41,8 +41,4 @@ There are no additional integration requirements between these two modules. Inte
 
 9. **Monetary values.** Package prices, exhibition fees, grant amounts and non-null award monetary values must be non-negative. This is an additional modelling assumption.
 
-## Submitted Files and Testing
-
-The required files are `README.md`, `uml.pdf`, `relational-model.pdf`, `schema.sql` and `queries.sql` (six queries: Core Q1–Q2, E Q1–Q2, G Q1–Q2). The optional `data.sql` supplies example records. `tests.sql` contains six negative integrity tests for local validation and is not a mandatory submission file.
-
-For local verification on an **empty PostgreSQL database**, execute `schema.sql`, then `data.sql`, `queries.sql` and `tests.sql` in that order. The queries use the example edition `(conference_id = 1, year = 2027)`; `tests.sql` rolls back its test transaction. Successful execution must be confirmed in PostgreSQL before submission.
+10. **Required attributes and NULL handling.** The UML explicitly marks the main identifiers as `«not null»`, while the PostgreSQL schema additionally applies `NOT NULL` to descriptive and association attributes that we have chosen to treat as mandatory (such as names, descriptions, dates, `role`, and application `status`). These additional constraints are implementation decisions and do not introduce new conceptual associations. Primary-key attributes are inherently non-null, including the qualified `year` and sponsorship-package `name`; foreign-key attributes required by mandatory relationships are also non-null. The explicitly optional `award.monetary_value` and `exhibition_space.organisation_id` remain nullable.
